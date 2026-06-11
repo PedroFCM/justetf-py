@@ -6,8 +6,16 @@ Example:
     [{"name": "Technology", "percentage": 27.32}, ...]
 """
 
+from ._gics import GICS_SECTORS, normalize_sector
 from ._isin import ticker_to_isin
 from ._sectors import Sector, sector_allocation
 from .api import etf_sectors
 
-__all__ = ["Sector", "ticker_to_isin", "sector_allocation", "etf_sectors"]
+__all__ = [
+    "GICS_SECTORS",
+    "Sector",
+    "etf_sectors",
+    "normalize_sector",
+    "sector_allocation",
+    "ticker_to_isin",
+]
