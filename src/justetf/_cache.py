@@ -53,4 +53,4 @@ def set(key: str, value: object, ttl: int) -> None:
     # Write-then-rename keeps concurrent readers from seeing partial JSON.
     tmp = target.with_name(f"{target.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps({"expires": time.time() + ttl, "data": value}))
-    os.replace(tmp, target)
+    Path.replace(tmp, target)
