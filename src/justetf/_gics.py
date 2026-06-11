@@ -23,8 +23,9 @@ _ALIASES: dict[str, str] = {
     "Consumer Defensive": "Consumer Staples",
     "Healthcare": "Health Care",
     "Basic Materials": "Materials",
-    # Pre-2016 GICS name
+    # Pre-2016 GICS names and provider shortenings
     "Telecommunication Services": "Communication Services",
+    "Telecommunication": "Communication Services",
 }
 
 
