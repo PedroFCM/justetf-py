@@ -1,5 +1,6 @@
 """High-level convenience API composing ISIN resolution and data fetching."""
 
+import functools
 import logging
 from dataclasses import dataclass
 
@@ -65,13 +66,10 @@ def get_etf(ticker: str) -> ETF:
         raise ValueError(f"No ISIN found for ticker {ticker!r}")
 
     with _client.new_session() as s:
-        page_html: str | None = None
 
+        @functools.cache
         def page() -> str:
-            nonlocal page_html
-            if page_html is None:
-                page_html = _profile.fetch_page(s, isin)
-            return page_html
+            return _profile.fetch_page(s, isin)
 
         return ETF(
             isin=isin,

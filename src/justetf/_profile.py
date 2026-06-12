@@ -21,7 +21,7 @@ of the same parameterized scraper.
 import re
 from collections.abc import Callable
 from html import unescape
-from typing import Literal, TypedDict, cast
+from typing import Literal, NamedTuple, TypedDict, cast
 
 import requests
 
@@ -36,11 +36,20 @@ Kind = Literal["sectors", "countries"]
 # Returns the profile page HTML, fetching it at most once across calls.
 PageLoader = Callable[[], str]
 
+
+class _KindRes(NamedTuple):
+    """Compiled regexes for one breakdown kind."""
+
+    name: re.Pattern[str]
+    pct: re.Pattern[str]
+    more: re.Pattern[str]  # "load more" AJAX link, absent on few-entry ETFs
+
+
 _RES = {
-    kind: (
-        re.compile(rf'tl_etf-holdings_{kind}_value_name"[^>]*>([^<]+)<'),
-        re.compile(rf'tl_etf-holdings_{kind}_value_percentage"[^>]*>([^<]+)<'),
-        re.compile(rf'"(/en/etf-profile\.html\?[^"]*loadMore{kind.capitalize()}[^"]*)"'),
+    kind: _KindRes(
+        name=re.compile(rf'tl_etf-holdings_{kind}_value_name"[^>]*>([^<]+)<'),
+        pct=re.compile(rf'tl_etf-holdings_{kind}_value_percentage"[^>]*>([^<]+)<'),
+        more=re.compile(rf'"(/en/etf-profile\.html\?[^"]*loadMore{kind.capitalize()}[^"]*)"'),
     )
     for kind in ("sectors", "countries")
 }
@@ -88,9 +97,9 @@ def _parse(html: str, kind: Kind) -> list[Allocation]:
         ValueError: If name and percentage counts differ (markup change),
             rather than silently mispairing them.
     """
-    name_re, pct_re, _ = _RES[kind]
-    names = name_re.findall(html)
-    pcts = pct_re.findall(html)
+    res = _RES[kind]
+    names = res.name.findall(html)
+    pcts = res.pct.findall(html)
     return [
         {"name": unescape(name), "percentage": float(pct.rstrip("%"))}
         for name, pct in zip(names, pcts, strict=True)
@@ -99,8 +108,7 @@ def _parse(html: str, kind: Kind) -> list[Allocation]:
 
 def _from_page(session: requests.Session, page: str, isin: str, kind: Kind) -> list[Allocation]:
     """Parse a kind's full breakdown from a profile page, following its AJAX link if present."""
-    _, _, more_re = _RES[kind]
-    m = more_re.search(page)
+    m = _RES[kind].more.search(page)
     if not m:
         # Few-entry ETFs embed all rows inline; no AJAX link exists.
         return _parse(page, kind)
