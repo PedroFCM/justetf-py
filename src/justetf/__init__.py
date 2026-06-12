@@ -1,21 +1,33 @@
-"""justetf-py: Python client for justETF sector allocation data.
+"""justetf-py: Python client for justETF sector and country allocation data.
 
 Example:
-    >>> from justetf import etf_sectors
+    >>> from justetf import etf_sectors, get_etf
     >>> etf_sectors("WEBN.DE")
     [{"name": "Technology", "percentage": 27.32}, ...]
+    >>> etf = get_etf("WEBN.DE")
+    >>> etf.info["ter"]
+    0.07
 """
 
+from ._countries import Country, country_allocation
 from ._gics import GICS_SECTORS, normalize_sector
+from ._info import ETFInfo, etf_info
 from ._isin import ticker_to_isin
 from ._sectors import Sector, sector_allocation
-from .api import etf_sectors
+from .api import ETF, etf_sectors, get_etf, portfolio_sectors
 
 __all__ = [
+    "Country",
+    "ETF",
+    "ETFInfo",
     "GICS_SECTORS",
     "Sector",
+    "country_allocation",
+    "etf_info",
     "etf_sectors",
+    "get_etf",
     "normalize_sector",
+    "portfolio_sectors",
     "sector_allocation",
     "ticker_to_isin",
 ]

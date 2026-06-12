@@ -2,8 +2,9 @@
 
 ## What this is
 
-A minimal Python client for fetching per-sector allocation data from justETF.
-Resolves ETF tickers to ISINs and returns sector weights as a list of `{name, percentage}` dicts.
+A minimal Python client for fetching ETF data from justETF: sector and country
+allocations as lists of `{name, percentage}` dicts, plus profile metadata (TER,
+fund size, replication, domicile, distribution). Resolves ETF tickers to ISINs.
 
 ## How to run
 
@@ -18,17 +19,24 @@ uv run python -c "from justetf import etf_sectors; print(etf_sectors('WEBN'))"
 
 ```
 src/justetf/
-  __init__.py    # re-exports only: Sector, ticker_to_isin, sector_allocation, etf_sectors
-  api.py         # etf_sectors() — composes _isin + _sectors; logs failures to "justetf" logger
+  __init__.py    # re-exports only (Sector, Country, ETFInfo, ETF, etf_sectors, get_etf, ...)
+  api.py         # etf_sectors() (never raises), get_etf(), portfolio_sectors(), ETF dataclass
   _client.py     # new_session() factory — fresh requests.Session per lookup (browser UA)
   _isin.py       # ticker → ISIN via justETF screener JSON endpoint
-  _sectors.py    # ISIN → sector list via profile page + Wicket AJAX; Sector TypedDict
+  _profile.py    # shared profile-page scraping: fetch_page(), parameterized sector/country
+                 # allocation (regexes keyed by kind), caching; PageLoader for shared fetches
+  _sectors.py    # Sector TypedDict + sector_allocation() — thin wrapper over _profile
+  _countries.py  # Country TypedDict + country_allocation() — thin wrapper over _profile
+  _info.py       # ETFInfo metadata (name, TER, fund size, ...) parsed from the profile page
   _cache.py      # disk cache at ~/.cache/justetf-py/ (JSON files, TTL-based, atomic writes)
   py.typed       # PEP 561 marker
 tests/
   conftest.py    # autouse fixture redirects _cache._CACHE_DIR to tmp_path
   test_isin.py
   test_sectors.py
+  test_countries.py
+  test_info.py
+  test_api.py    # get_etf (single page fetch) + portfolio_sectors (mocked etf_sectors)
 ```
 
 ## justETF endpoints
@@ -47,23 +55,33 @@ tests/
    Disambiguation: prefer exact `ticker` match; otherwise take first row (justETF ranks
    best match first).
 
-### ISIN → sectors (two requests, same session)
+### ISIN → sectors/countries (two requests, same session)
 
 1. GET `https://www.justetf.com/en/etf-profile.html?isin={ISIN}` — saves session cookies.
-   - If page contains `loadMoreSectors`: that URL is the AJAX endpoint (full breakdown).
-   - If absent: embedded rows are already complete (few-sector ETFs).
+   - If page contains `loadMoreSectors` / `loadMoreCountries`: that URL is the AJAX
+     endpoint (full breakdown).
+   - If absent: embedded rows are already complete (few-entry ETFs).
 
-2. GET `https://www.justetf.com/en{loadMoreSectors_path}` with headers:
+2. GET `https://www.justetf.com/en{loadMore_path}` with headers:
    `Wicket-Ajax: true`, `Wicket-Ajax-BaseURL: etf-profile.html?isin={ISIN}`
-   Parse `data-testid="tl_etf-holdings_sectors_value_name"` and `_percentage` from the XML.
+   Parse `data-testid="tl_etf-holdings_{sectors|countries}_value_name"` and
+   `_percentage` from the XML.
 
-Browser User-Agent required on all requests. `Accept-Language: en` for English sector names.
+### ISIN → metadata (one request)
+
+All `ETFInfo` fields come from inline profile-page HTML (`etf-profile-header_etf-name`,
+`tl_etf-basics_value_*` testids, `fund-size-value-wrapper`). `get_etf()` fetches the
+profile page at most once and shares it across all three parsers via a `PageLoader`.
+
+Browser User-Agent required on all requests. `Accept-Language: en` for English names.
 
 ## Caching
 
 - `~/.cache/justetf-py/{sha1(key)}.json` — `{"expires": <unix_ts>, "data": ...}`
 - ISIN lookups: 30-day TTL. Negative results (no match) cached as `""` with 1-day TTL.
-- Sector data: 24-hour TTL. Empty parses are never cached (keeps markup breakage retryable).
+- Sector/country data: 24-hour TTL. Empty parses are never cached (keeps markup
+  breakage retryable).
+- Metadata: 24-hour TTL. Cached only when every field parsed; partial parses stay retryable.
 - Writes are atomic (temp file + `os.replace`).
 
 ## After every change
@@ -91,9 +109,11 @@ def ticker_to_isin(yahoo_ticker: str) -> str | None:
 
 ## Key conventions
 
-- `etf_sectors()` must never raise — catch all exceptions, log to the `justetf` logger, return `[]`.
-- No pandas, no BeautifulSoup — `requests` + `re` only. HTML-unescape URLs extracted from hrefs.
-- Sector results are `list[Sector]` (TypedDict); `zip(..., strict=True)` so markup drift raises
-  instead of mispairing names and percentages.
+- `etf_sectors()` and `portfolio_sectors()` must never raise — failures are logged to the
+  `justetf` logger and skipped. `get_etf()` raises (`ValueError`, `requests.HTTPError`) by design.
+- No pandas, no BeautifulSoup — `requests` + `re` only. HTML-unescape URLs extracted from
+  hrefs AND all text captured from HTML (names can contain `&amp;`, e.g. "S&P 500").
+- Allocation results are `list[Sector]` / `list[Country]` (TypedDicts); `zip(..., strict=True)`
+  so markup drift raises instead of mispairing names and percentages.
 - Tests use `responses` library for HTTP mocking; live tests are marked `@pytest.mark.live`
   and excluded by default via `addopts = "-m 'not live'"`.
