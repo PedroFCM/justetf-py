@@ -23,8 +23,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pedrofcmachado/justetf-py"
-Issues = "https://github.com/pedrofcmachado/justetf-py/issues"
+Homepage = "https://github.com/PedroFCM/justetf-py"
+Issues = "https://github.com/PedroFCM/justetf-py/issues"
 
 [dependency-groups]
 dev = [
