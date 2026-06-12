@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/PedroFCM/justetf-py/compare/v0.1.0...v0.2.0) (2026-06-12)
+
+
+### Features
+
+* robustness fixes, fund size currency split, __version__ ([945e10e](https://github.com/PedroFCM/justetf-py/commit/945e10ed2e508a71382d9f37f4ce4b1434c33c0a))
+
 ## 0.1.0 (2026-06-12)
 
 
