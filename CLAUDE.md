@@ -34,6 +34,7 @@ tests/
   conftest.py    # autouse fixture redirects _cache._CACHE_DIR to tmp_path
   test_isin.py
   test_allocation.py  # sector_allocation + country_allocation (shared _profile scraper)
+  test_cache.py       # roundtrip, expiry, corrupted-file robustness, stale tmp sweep
   test_info.py
   test_api.py    # get_etf (single page fetch) + portfolio_sectors (mocked etf_sectors)
 ```

@@ -35,7 +35,8 @@ def test_get_etf_fetches_profile_once(monkeypatch):
     assert etf.countries == [{"name": "United States", "percentage": 64.12}]
     assert etf.info["name"] == "Amundi Prime All Country World UCITS ETF Acc"
     assert etf.info["ter"] == 0.07
-    assert etf.info["fund_size_meur"] == 1890.0
+    assert etf.info["fund_size"] == 1890.0
+    assert etf.info["fund_size_currency"] == "EUR"
     # Sectors, countries, and info share a single profile-page fetch.
     assert len(rsps_lib.calls) == 1
 

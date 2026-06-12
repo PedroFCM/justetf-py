@@ -31,7 +31,8 @@ etf.sectors               # [{"name": "Technology", "percentage": 27.32}, ...]
 etf.countries             # [{"name": "United States", "percentage": 63.1}, ...]
 etf.info["name"]          # "Amundi MSCI World UCITS ETF"
 etf.info["ter"]           # 0.07
-etf.info["fund_size_meur"]  # 4200.0
+etf.info["fund_size"]     # 4200.0 (millions)
+etf.info["fund_size_currency"]  # "EUR"
 etf.info["replication"]   # "Physical"
 etf.info["domicile"]      # "Luxembourg"
 etf.info["distribution"]  # "Accumulating"

@@ -11,9 +11,12 @@ returned (e.g. fuzzy matches), the row whose ``ticker`` field matches exactly is
 preferred; otherwise the first row is taken (justETF ranks the best match first).
 """
 
+import logging
 import re
 
 from . import _cache, _client
+
+logger = logging.getLogger("justetf")
 
 _SEARCH_URL = "https://www.justetf.com/en/search.html"
 _COUNTER_RE = re.compile(
@@ -52,7 +55,7 @@ def ticker_to_isin(yahoo_ticker: str) -> str | None:
         return cached or None
 
     with _client.new_session() as s:
-        resp = s.get(_SEARCH_URL, params={"search": "ETFS"}, timeout=15)
+        resp = s.get(_SEARCH_URL, params={"search": "ETFS"}, timeout=_client.TIMEOUT)
         resp.raise_for_status()
 
         m = _COUNTER_RE.search(resp.text)
@@ -74,7 +77,7 @@ def ticker_to_isin(yahoo_ticker: str) -> str | None:
             "defaultCurrency": "EUR",
             "etfsParams": etf_params,
         }
-        resp = s.post(endpoint, data=data, timeout=15)
+        resp = s.post(endpoint, data=data, timeout=_client.TIMEOUT)
         resp.raise_for_status()
 
     rows = resp.json().get("data", [])
@@ -83,6 +86,11 @@ def ticker_to_isin(yahoo_ticker: str) -> str | None:
         return None
 
     # Prefer an exact ticker match; otherwise trust justETF's ranking (first row).
-    isin = next((r["isin"] for r in rows if r.get("ticker") == base), rows[0]["isin"])
+    row = next((r for r in rows if r.get("ticker") == base), rows[0])
+    isin = row.get("isin")
+    if not isin:
+        # Schema drift: row exists but carries no ISIN. Do not cache; retryable.
+        logger.warning("ticker_to_isin(%r): screener row missing 'isin' field", base)
+        return None
     _cache.set(f"isin:{base}", isin, _TTL_ISIN)
     return isin

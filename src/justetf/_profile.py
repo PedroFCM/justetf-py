@@ -21,7 +21,7 @@ of the same parameterized scraper.
 import re
 from collections.abc import Callable
 from html import unescape
-from typing import TypedDict, cast
+from typing import Literal, TypedDict, cast
 
 import requests
 
@@ -29,6 +29,9 @@ from . import _cache, _client
 
 PROFILE_URL = "https://www.justetf.com/en/etf-profile.html"
 TTL_DAY = 24 * 3600
+
+# The two breakdown kinds the profile page exposes; a typo becomes a type error.
+Kind = Literal["sectors", "countries"]
 
 # Returns the profile page HTML, fetching it at most once across calls.
 PageLoader = Callable[[], str]
@@ -66,12 +69,12 @@ def fetch_page(session: requests.Session, isin: str) -> str:
     Returns:
         Profile page HTML.
     """
-    resp = session.get(PROFILE_URL, params={"isin": isin}, timeout=15)
+    resp = session.get(PROFILE_URL, params={"isin": isin}, timeout=_client.TIMEOUT)
     resp.raise_for_status()
     return resp.text
 
 
-def _parse(html: str, kind: str) -> list[Allocation]:
+def _parse(html: str, kind: Kind) -> list[Allocation]:
     """Extract name/percentage pairs from an HTML or XML fragment.
 
     Args:
@@ -94,7 +97,7 @@ def _parse(html: str, kind: str) -> list[Allocation]:
     ]
 
 
-def _from_page(session: requests.Session, page: str, isin: str, kind: str) -> list[Allocation]:
+def _from_page(session: requests.Session, page: str, isin: str, kind: Kind) -> list[Allocation]:
     """Parse a kind's full breakdown from a profile page, following its AJAX link if present."""
     _, _, more_re = _RES[kind]
     m = more_re.search(page)
@@ -110,7 +113,7 @@ def _from_page(session: requests.Session, page: str, isin: str, kind: str) -> li
             "Wicket-Ajax": "true",
             "Wicket-Ajax-BaseURL": f"etf-profile.html?isin={isin}",
         },
-        timeout=15,
+        timeout=_client.TIMEOUT,
     )
     resp.raise_for_status()
     return _parse(resp.text, kind)
@@ -118,7 +121,7 @@ def _from_page(session: requests.Session, page: str, isin: str, kind: str) -> li
 
 def allocation(
     isin: str,
-    kind: str,
+    kind: Kind,
     session: requests.Session | None = None,
     page: PageLoader | None = None,
 ) -> list[Allocation]:
@@ -132,7 +135,13 @@ def allocation(
 
     Returns:
         List of ``{"name": str, "percentage": float}`` dicts ordered by weight.
+
+    Raises:
+        ValueError: If only one of ``session`` and ``page`` is given.
     """
+    if (session is None) != (page is None):
+        raise ValueError("session and page must be given together")
+
     cached = _cache.get(f"{kind}:{isin}")
     if cached is not None:
         return cast(list[Allocation], cached)

@@ -3,6 +3,7 @@ import responses as rsps_lib
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from justetf import country_allocation, etf_sectors, sector_allocation
+from justetf._profile import allocation
 
 SEARCH_URL = "https://www.justetf.com/en/search.html"
 PROFILE_URL = "https://www.justetf.com/en/etf-profile.html"
@@ -70,6 +71,11 @@ _COUNTRIES_PROFILE_NO_MORE = """
   <span data-testid="tl_etf-holdings_countries_value_percentage">100.00%</span>
 </body></html>
 """
+
+
+def test_session_without_page_raises():
+    with pytest.raises(ValueError, match="together"):
+        allocation(ISIN, "sectors", session=object())  # type: ignore[arg-type]
 
 
 # --- sectors ---------------------------------------------------------------

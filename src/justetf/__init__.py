@@ -9,11 +9,15 @@ Example:
     0.07
 """
 
+from importlib.metadata import version as _version
+
 from ._gics import GICS_SECTORS, normalize_sector
 from ._info import ETFInfo, etf_info
 from ._isin import ticker_to_isin
 from ._profile import Country, Sector, country_allocation, sector_allocation
 from .api import ETF, etf_sectors, get_etf, portfolio_sectors
+
+__version__ = _version("justetf-py")
 
 __all__ = [
     "Country",

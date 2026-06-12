@@ -26,7 +26,8 @@ class ETFInfo(TypedDict):
 
     name: str
     ter: float | None  # total expense ratio, e.g. ``0.07`` for "0.07% p.a."
-    fund_size_meur: float | None  # fund size in EUR millions as displayed on justETF
+    fund_size: float | None  # fund size in millions of ``fund_size_currency``
+    fund_size_currency: str | None  # e.g. ``"EUR"`` (justETF default display currency)
     replication: str | None  # e.g. ``"Physical"``
     domicile: str | None  # e.g. ``"Ireland"``
     distribution: str | None  # e.g. ``"Accumulating"`` or ``"Distributing"``
@@ -42,31 +43,41 @@ def _parse_ter(raw: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
-def _parse_fund_size_meur(html: str) -> float | None:
+def _parse_fund_size(html: str) -> tuple[float | None, str | None]:
+    """Extract fund size in millions plus its display currency.
+
+    Returns:
+        ``(amount_in_millions, currency)``, or ``(None, None)`` if absent or
+        the unit is unknown. A missing currency prefix means EUR (site default).
+    """
     m = _FUND_SIZE_RE.search(html)
     if not m:
-        return None
+        return None, None
+    cur = re.match(r"^([A-Z]{3})\s+", m.group(1))
+    currency = cur.group(1) if cur else "EUR"
     # Strip currency prefix (e.g. "EUR ") and thousands commas.
     amount_str = re.sub(r"^[A-Z]+\s+", "", m.group(1)).replace(",", "").strip()
     try:
         amount = float(amount_str)
     except ValueError:
-        return None
+        return None, None
     unit = m.group(2).lower()
     if unit == "m":
-        return amount
+        return amount, currency
     if unit == "bn":
-        return amount * 1000
+        return amount * 1000, currency
     # Unknown unit: better None than a value off by orders of magnitude.
-    return None
+    return None, None
 
 
 def _parse_info(html: str) -> ETFInfo:
     ter_raw = _first(_TER_RE, html)
+    fund_size, fund_size_currency = _parse_fund_size(html)
     return ETFInfo(
         name=_first(_NAME_RE, html) or "",
         ter=_parse_ter(ter_raw) if ter_raw else None,
-        fund_size_meur=_parse_fund_size_meur(html),
+        fund_size=fund_size,
+        fund_size_currency=fund_size_currency,
         replication=_first(_REPLICATION_RE, html),
         domicile=_first(_DOMICILE_RE, html),
         distribution=_first(_DISTRIBUTION_RE, html),

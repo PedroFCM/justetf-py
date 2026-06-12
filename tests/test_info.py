@@ -33,7 +33,8 @@ def test_parse_full_info():
     result = etf_info(ISIN)
     assert result["name"] == "Amundi Prime All Country World UCITS ETF Acc"
     assert result["ter"] == 0.07
-    assert result["fund_size_meur"] == 1890.0
+    assert result["fund_size"] == 1890.0
+    assert result["fund_size_currency"] == "EUR"
     assert result["replication"] == "Physical"
     assert result["domicile"] == "Ireland"
     assert result["distribution"] == "Accumulating"
@@ -45,7 +46,8 @@ def test_missing_optional_fields_are_none():
     result = etf_info(ISIN)
     assert result["name"] == "Minimal ETF"
     assert result["ter"] is None
-    assert result["fund_size_meur"] is None
+    assert result["fund_size"] is None
+    assert result["fund_size_currency"] is None
     assert result["replication"] is None
 
 
@@ -66,12 +68,14 @@ def test_name_entities_are_unescaped():
 
 
 def test_fund_size_units():
-    from justetf._info import _parse_fund_size_meur
+    from justetf._info import _parse_fund_size
 
     html = '<div data-testid="x_fund-size-value-wrapper"><span> EUR 2.1 </span> bn'
-    assert _parse_fund_size_meur(html) == 2100.0
+    assert _parse_fund_size(html) == (2100.0, "EUR")
     # Unknown unit must not be silently treated as millions.
-    assert _parse_fund_size_meur(html.replace("bn", "k")) is None
+    assert _parse_fund_size(html.replace("bn", "k")) == (None, None)
+    # Non-EUR display currency is preserved, not mislabeled as EUR.
+    assert _parse_fund_size(html.replace("EUR", "GBP")) == (2100.0, "GBP")
 
 
 @rsps_lib.activate
