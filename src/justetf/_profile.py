@@ -12,6 +12,10 @@ already contains all rows and the AJAX call is skipped.
 
 ``get_etf`` shares a single profile fetch across sectors, countries, and
 metadata by passing a ``PageLoader`` callback.
+
+The public ``sector_allocation`` / ``country_allocation`` wrappers and the
+``Sector`` / ``Country`` types live here too, since both are thin specialisations
+of the same parameterized scraper.
 """
 
 import re
@@ -40,10 +44,16 @@ _RES = {
 
 
 class Allocation(TypedDict):
-    """A single name/percentage breakdown entry."""
+    """A single name/percentage breakdown entry (sector or country)."""
 
     name: str
     percentage: float
+
+
+# Sector and country breakdowns share the same shape; the distinct public names
+# document intent at call sites without duplicating the type.
+Sector = Allocation
+Country = Allocation
 
 
 def fetch_page(session: requests.Session, isin: str) -> str:
@@ -137,3 +147,27 @@ def allocation(
     if items:
         _cache.set(f"{kind}:{isin}", items, TTL_DAY)
     return items
+
+
+def sector_allocation(isin: str) -> list[Sector]:
+    """Fetch sector allocation for an ETF by ISIN.
+
+    Args:
+        isin: A valid ISIN (e.g. ``IE0003XJA0J9``).
+
+    Returns:
+        List of ``{"name": str, "percentage": float}`` dicts ordered by weight.
+    """
+    return allocation(isin, "sectors")
+
+
+def country_allocation(isin: str) -> list[Country]:
+    """Fetch country allocation for an ETF by ISIN.
+
+    Args:
+        isin: A valid ISIN (e.g. ``IE0003XJA0J9``).
+
+    Returns:
+        List of ``{"name": str, "percentage": float}`` dicts ordered by weight.
+    """
+    return allocation(isin, "countries")

@@ -24,17 +24,16 @@ src/justetf/
   _client.py     # new_session() factory — fresh requests.Session per lookup (browser UA)
   _isin.py       # ticker → ISIN via justETF screener JSON endpoint
   _profile.py    # shared profile-page scraping: fetch_page(), parameterized sector/country
-                 # allocation (regexes keyed by kind), caching; PageLoader for shared fetches
-  _sectors.py    # Sector TypedDict + sector_allocation() — thin wrapper over _profile
-  _countries.py  # Country TypedDict + country_allocation() — thin wrapper over _profile
+                 # allocation (regexes keyed by kind), caching; PageLoader for shared fetches.
+                 # Also hosts the Sector/Country types (aliases of one Allocation TypedDict)
+                 # and the public sector_allocation()/country_allocation() wrappers.
   _info.py       # ETFInfo metadata (name, TER, fund size, ...) parsed from the profile page
   _cache.py      # disk cache at ~/.cache/justetf-py/ (JSON files, TTL-based, atomic writes)
   py.typed       # PEP 561 marker
 tests/
   conftest.py    # autouse fixture redirects _cache._CACHE_DIR to tmp_path
   test_isin.py
-  test_sectors.py
-  test_countries.py
+  test_allocation.py  # sector_allocation + country_allocation (shared _profile scraper)
   test_info.py
   test_api.py    # get_etf (single page fetch) + portfolio_sectors (mocked etf_sectors)
 ```

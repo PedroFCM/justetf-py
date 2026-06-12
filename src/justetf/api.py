@@ -2,13 +2,11 @@
 
 import logging
 from dataclasses import dataclass
-from typing import cast
 
 from . import _client, _profile
-from ._countries import Country
 from ._info import ETFInfo, _fetch_info
 from ._isin import ticker_to_isin
-from ._sectors import Sector, sector_allocation
+from ._profile import Country, Sector, sector_allocation
 
 logger = logging.getLogger("justetf")
 
@@ -77,10 +75,8 @@ def get_etf(ticker: str) -> ETF:
 
         return ETF(
             isin=isin,
-            sectors=cast(list[Sector], _profile.allocation(isin, "sectors", session=s, page=page)),
-            countries=cast(
-                list[Country], _profile.allocation(isin, "countries", session=s, page=page)
-            ),
+            sectors=_profile.allocation(isin, "sectors", session=s, page=page),
+            countries=_profile.allocation(isin, "countries", session=s, page=page),
             info=_fetch_info(isin, page=page),
         )
 

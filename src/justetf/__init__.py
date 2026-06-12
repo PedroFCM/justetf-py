@@ -9,11 +9,10 @@ Example:
     0.07
 """
 
-from ._countries import Country, country_allocation
 from ._gics import GICS_SECTORS, normalize_sector
 from ._info import ETFInfo, etf_info
 from ._isin import ticker_to_isin
-from ._sectors import Sector, sector_allocation
+from ._profile import Country, Sector, country_allocation, sector_allocation
 from .api import ETF, etf_sectors, get_etf, portfolio_sectors
 
 __all__ = [
