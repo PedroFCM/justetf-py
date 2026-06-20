@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/PedroFCM/justetf-py/compare/v0.2.0...v0.3.0) (2026-06-20)
+
+
+### Features
+
+* top holdings via top_holdings() and ETF.holdings ([68eb27e](https://github.com/PedroFCM/justetf-py/commit/68eb27e71835e626288189ec7d97bb70ecc55312))
+
 ## [0.2.0](https://github.com/PedroFCM/justetf-py/compare/v0.1.0...v0.2.0) (2026-06-12)
 
 
