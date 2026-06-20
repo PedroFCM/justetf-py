@@ -21,8 +21,10 @@ _PROFILE = """
   <span data-testid="tl_etf-holdings_sectors_value_percentage">27.32%</span>
   <span data-testid="tl_etf-holdings_countries_value_name">United States</span>
   <span data-testid="tl_etf-holdings_countries_value_percentage">64.12%</span>
+  <a data-testid="tl_etf-holdings_top-holdings_link_name" href="/en/stock-profiles/US67066G1040" title="NVIDIA Corp."><span>NVIDIA Corp.</span></a>
+  <span data-testid="tl_etf-holdings_top-holdings_value_percentage">4.84%</span>
 </body></html>
-"""
+"""  # noqa: E501
 
 
 @rsps_lib.activate
@@ -33,6 +35,7 @@ def test_get_etf_fetches_profile_once(monkeypatch):
     assert etf.isin == ISIN
     assert etf.sectors == [{"name": "Technology", "percentage": 27.32}]
     assert etf.countries == [{"name": "United States", "percentage": 64.12}]
+    assert etf.holdings == [{"name": "NVIDIA Corp.", "isin": "US67066G1040", "percentage": 4.84}]
     assert etf.info["name"] == "Amundi Prime All Country World UCITS ETF Acc"
     assert etf.info["ter"] == 0.07
     assert etf.info["fund_size"] == 1890.0
