@@ -12,6 +12,7 @@ Example:
 from importlib.metadata import version as _version
 
 from ._gics import GICS_SECTORS, normalize_sector
+from ._holdings import Holding, top_holdings
 from ._info import ETFInfo, etf_info
 from ._isin import ticker_to_isin
 from ._profile import Country, Sector, country_allocation, sector_allocation
@@ -24,6 +25,7 @@ __all__ = [
     "ETF",
     "ETFInfo",
     "GICS_SECTORS",
+    "Holding",
     "Sector",
     "country_allocation",
     "etf_info",
@@ -33,4 +35,5 @@ __all__ = [
     "portfolio_sectors",
     "sector_allocation",
     "ticker_to_isin",
+    "top_holdings",
 ]

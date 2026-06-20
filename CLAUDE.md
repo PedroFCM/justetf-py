@@ -28,6 +28,8 @@ src/justetf/
                  # Also hosts the Sector/Country types (aliases of one Allocation TypedDict)
                  # and the public sector_allocation()/country_allocation() wrappers.
   _info.py       # ETFInfo metadata (name, TER, fund size, ...) parsed from the profile page
+  _holdings.py   # top_holdings(): top constituent positions (name, ISIN, weight) from the
+                 # inline profile page (no AJAX; ISIN encoded in each stock-profile href)
   _cache.py      # disk cache at ~/.cache/justetf-py/ (JSON files, TTL-based, atomic writes)
   py.typed       # PEP 561 marker
 tests/
@@ -36,6 +38,7 @@ tests/
   test_allocation.py  # sector_allocation + country_allocation (shared _profile scraper)
   test_cache.py       # roundtrip, expiry, corrupted-file robustness, stale tmp sweep
   test_info.py
+  test_holdings.py    # top_holdings (parse, unescape, strict-zip mismatch, empty-not-cached)
   test_api.py    # get_etf (single page fetch) + portfolio_sectors (mocked etf_sectors)
 ```
 
@@ -71,7 +74,10 @@ tests/
 
 All `ETFInfo` fields come from inline profile-page HTML (`etf-profile-header_etf-name`,
 `tl_etf-basics_value_*` testids, `fund-size-value-wrapper`). `get_etf()` fetches the
-profile page at most once and shares it across all three parsers via a `PageLoader`.
+profile page at most once and shares it across all four parsers (sectors, countries,
+top holdings, metadata) via a `PageLoader`. Top holdings parse from inline rows:
+`data-testid="tl_etf-holdings_top-holdings_link_name"` (name in `title`, ISIN in the
+`/en/stock-profiles/{ISIN}` href) and `_value_percentage` for the weight. No AJAX/loadMore.
 
 Browser User-Agent required on all requests. `Accept-Language: en` for English names.
 

@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 
 from . import _client, _profile
+from ._holdings import Holding, _fetch_holdings
 from ._info import ETFInfo, _fetch_info
 from ._isin import ticker_to_isin
 from ._profile import Country, Sector, sector_allocation
@@ -19,6 +20,7 @@ class ETF:
     isin: str
     sectors: list[Sector]
     countries: list[Country]
+    holdings: list[Holding]
     info: ETFInfo
 
 
@@ -75,6 +77,7 @@ def get_etf(ticker: str) -> ETF:
             isin=isin,
             sectors=_profile.allocation(isin, "sectors", session=s, page=page),
             countries=_profile.allocation(isin, "countries", session=s, page=page),
+            holdings=_fetch_holdings(isin, page=page),
             info=_fetch_info(isin, page=page),
         )
 

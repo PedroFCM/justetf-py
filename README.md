@@ -8,6 +8,8 @@ automatically.
 
 ## Installation
 
+Requires Python 3.10+. Pure Python, depends only on `requests`.
+
 ```bash
 pip install justetf-py
 ```
@@ -28,18 +30,20 @@ etf = get_etf("WEBN.DE")
 
 etf.isin                  # "IE0003XJA0J9"
 etf.sectors               # [{"name": "Technology", "percentage": 27.32}, ...]
-etf.countries             # [{"name": "United States", "percentage": 63.1}, ...]
-etf.info["name"]          # "Amundi MSCI World UCITS ETF"
+etf.countries             # [{"name": "United States", "percentage": 58.39}, ...]
+etf.holdings              # [{"name": "NVIDIA Corp.", "isin": "US67066G1040", "percentage": 4.84}, ...]
+etf.info["name"]          # "Amundi Prime All Country World UCITS ETF Acc"
 etf.info["ter"]           # 0.07
-etf.info["fund_size"]     # 4200.0 (millions)
+etf.info["fund_size"]     # 1999.0 (millions)
 etf.info["fund_size_currency"]  # "EUR"
 etf.info["replication"]   # "Physical"
-etf.info["domicile"]      # "Luxembourg"
+etf.info["domicile"]      # "Ireland"
 etf.info["distribution"]  # "Accumulating"
 ```
 
-`get_etf()` fetches the profile page once and shares it across all three parsers.
-Raises `ValueError` if the ticker is unknown, `requests.HTTPError` on network errors.
+`get_etf()` fetches the profile page once and shares it across all four parsers (sectors,
+countries, top holdings, metadata). Raises `ValueError` if the ticker is unknown,
+`requests.HTTPError` on network errors.
 
 ### Sector allocation only
 
@@ -68,11 +72,12 @@ data are skipped with a logged warning.
 ### Lower-level access
 
 ```python
-from justetf import ticker_to_isin, sector_allocation, country_allocation, etf_info
+from justetf import ticker_to_isin, sector_allocation, country_allocation, top_holdings, etf_info
 
 isin = ticker_to_isin("CSPX.L")          # "IE00B5BMR087"
 sectors = sector_allocation(isin)         # list[Sector]
 countries = country_allocation(isin)      # list[Country]
+holdings = top_holdings(isin)             # list[Holding] (name, isin, percentage)
 info = etf_info(isin)                     # ETFInfo TypedDict
 ```
 
@@ -112,6 +117,25 @@ uv run ruff check . --fix
 uv run ruff format .
 ```
 
+## Contributing
+
+Issues and pull requests welcome. Before opening a PR, run the checks above
+(`ruff check`, `ruff format`, `pytest`) and keep changes focused. New scraping logic
+should come with mocked unit tests plus a `@pytest.mark.live` test.
+
+## Security
+
+Report vulnerabilities via GitHub private vulnerability reporting — see [SECURITY.md](SECURITY.md).
+
+## Disclaimer
+
+This is an unofficial, community project and is not affiliated with, endorsed by, or
+supported by justETF. It works by scraping the public justETF website, so it may break
+without notice if their markup changes. Intended for personal, non-commercial use:
+respect [justETF's terms of service](https://www.justetf.com), avoid aggressive request
+rates (the built-in disk cache helps), and verify any data before relying on it for
+financial decisions. No warranty of accuracy.
+
 ## License
 
-MIT
+[MIT](LICENSE)
